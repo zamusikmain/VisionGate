@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      HISTORY_DB: /app/data/history.sqlite3
+      GATE_CONFIG: /app/data/thresholds.json
+      STORE_ANALYSIS_IMAGES: ${STORE_ANALYSIS_IMAGES:-false}
+      PRIVATE_IMAGE_DIR: /app/data/private-images
+      IMAGE_RETENTION_DAYS: ${IMAGE_RETENTION_DAYS:-7}
+      MAX_CONCURRENT_ANALYSES: ${MAX_CONCURRENT_ANALYSES:-2}
+    volumes:
+      - gate-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+volumes:
+  gate-data:

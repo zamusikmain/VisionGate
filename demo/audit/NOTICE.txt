@@ -1,0 +1,1 @@
+SYNTHETIC AUDIT FIXTURES ONLY. unsupported.heic is a container header fragment for rejection testing, not a real HEIC photo. corrupted.png is intentionally not a valid image. exif-6.jpg is a generated barcode with EXIF orientation.

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: visiongate
+    runtime: docker
+    plan: free
+    branch: main
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: STORE_ANALYSIS_IMAGES
+        value: "false"
+      - key: HISTORY_DB
+        value: /app/data/history.sqlite3
+      - key: GATE_CONFIG
+        value: /app/data/thresholds.json
+      - key: MAX_CONCURRENT_ANALYSES
+        value: "1"

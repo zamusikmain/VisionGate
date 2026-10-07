@@ -1,0 +1,1 @@
+SYNTHETIC DEMO ONLY. These labels test controlled scenarios, not target-domain accuracy.

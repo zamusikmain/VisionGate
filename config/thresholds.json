@@ -1,0 +1,16 @@
+{
+  "sharpness_min": 60.0,
+  "sharpness_critical": 15.0,
+  "brightness_min": 45.0,
+  "brightness_max": 240.0,
+  "dark_pixel_max": 0.75,
+  "overexposure_max": 0.85,
+  "contrast_min": 30.0,
+  "barcode_area_min": 0.015,
+  "barcode_width_min": 0.15,
+  "edge_margin_min": 0.02,
+  "glare_max": 0.15,
+  "perspective_max": 0.45,
+  "quality_score_min": 75.0,
+  "decode_weight": 0.35
+}
