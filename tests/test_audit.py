@@ -133,12 +133,13 @@ def bars(value='ABC123456'):
 
 
 @pytest.mark.parametrize('second_value',['XYZ987654','ABC123456'])
-def test_multiple_real_barcodes_are_rejected(second_value):
+@pytest.mark.parametrize('quarter_turns',range(4))
+def test_multiple_real_barcodes_are_rejected(second_value,quarter_turns):
     canvas=np.full((1200,1000),210,np.uint8)
     for value,y in [('ABC123456',200),(second_value,800)]:
         code=bars(value);h,w=code.shape
         canvas[y:y+h,200:200+w]=code
-    r=analyze(cv2.cvtColor(canvas,cv2.COLOR_GRAY2BGR))
+    r=analyze(cv2.cvtColor(np.ascontiguousarray(np.rot90(canvas,quarter_turns)),cv2.COLOR_GRAY2BGR))
     assert r.barcode.decoded and r.barcode.count==2
     assert r.decision=='RETAKE' and r.issues[0]=='MULTIPLE_BARCODES'
 
@@ -167,7 +168,7 @@ def test_decoder_stops_on_success_and_does_not_accept_localization_only():
         calls=0
         def decode(self,image):self.calls+=1;return []
     missing=Missing();r=analyze(clean_image(),decoder=missing)
-    assert missing.calls==5 and r.decision=='RETAKE' and not r.barcode.decoded
+    assert missing.calls==8 and r.decision=='RETAKE' and not r.barcode.decoded
 
 
 @pytest.mark.parametrize('field',['sharpness','brightness','contrast','glare','perspective'])

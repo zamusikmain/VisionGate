@@ -1,5 +1,6 @@
 from typing import Protocol
 import cv2
+import numpy as np
 import zxingcpp
 from .models import Barcode
 
@@ -37,6 +38,33 @@ def decode_attempts(image, decoder: BarcodeDecoder):
             return chosen
         if found:
             best = found
+    # ZXing's directional search is heuristic, not a guarantee of identical
+    # detection after rotating pixels. Keep the successful fast path unchanged.
+    # Only three extra native reads, without repeating photometric variants.
+    h, w = image.shape[:2]
+    for turns in (2, 1, 3):
+        found = decoder.decode(np.ascontiguousarray(np.rot90(image, turns)))
+        valid = []
+        for candidate in found:
+            if not candidate.decoded:
+                continue  # A localization/checksum error never becomes success.
+            b = candidate.model_copy(deep=True)
+            def restore(x, y):
+                if turns == 1: return [w-1-y, x]
+                if turns == 2: return [w-1-x, h-1-y]
+                return [y, h-1-x]
+            b.polygon = [restore(x,y) for x,y in b.polygon]
+            if b.bounding_box:
+                x1,y1,x2,y2 = b.bounding_box
+                points = [restore(x,y) for x,y in ((x1,y1),(x2,y1),(x2,y2),(x1,y2))]
+                xs,ys = zip(*points)
+                b.bounding_box = [min(xs),min(ys),max(xs),max(ys)]
+            b.decode_method = f'rotated-{turns*90}'
+            valid.append(b)
+        if valid:
+            chosen = max(valid, key=lambda b: (b.bounding_box[2]-b.bounding_box[0])*(b.bounding_box[3]-b.bounding_box[1]))
+            chosen.count = len(valid)
+            return chosen
     if best:
         best[0].count = len(best)
         return best[0]
