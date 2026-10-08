@@ -1,5 +1,11 @@
 # Final MVP audit — 2026-10-07
 
+## Offline Barcode Integrity research — 2026-10-08
+
+Prototype exists only in experiments/ and is excluded from Docker context. No application imports, production/API changes or threshold changes. Full results: docs/barcode-integrity.md; private per-image artifacts: reports/barcode-integrity. Comparison covers all 164 existing scenarios plus 21 normal controls through real HTTP API. Intrinsic continuity flags 8/29 accepted occlusions; with generator-ground-truth expected region, 24/29 (oracle gain, not demonstrated localization). Zero intrinsic false flags among 22 supported normal Code128 controls; QR/absent geometry are unknown, not intact. Crop detection not demonstrated. Pixel-identical short-valid/90%-occluded control proves need for external extent/context in that case. No production integration recommended yet.
+
+Eight additional prototype tests; full Windows 121 passed / 2 symlink skips, Linux Docker 123 passed. Compose rebuild passed; unchanged frontend build reused. API config before/after stable, production diff empty, threshold SHA256 unchanged. Generated artifacts remain outside datasets and Git. No training, threshold search or calibration occurred.
+
 ## Synthetic stress extension — 2026-10-08
 
 Added tools/barcode_stress.py and eleven infrastructure regression tests without changes to backend analysis/metrics/Decision Engine/thresholds. Real Compose HTTP run: 164 synthetic cases, 46 ACCEPT, 118 RETAKE, zero technical errors; 34 review candidates. Accepted occlusions: Code128 28/63, QR 1/63, all with expected payload. Severe 90%-height Code128 masking can ACCEPT at score100 because the decoder ROI is the surviving band; this is a completeness-policy risk, not an observed wrong decode. Full findings and proposals (not implemented): docs/barcode-stress.md. Generated images/JSON/CSV/Markdown remain ignored under reports, outside real datasets.

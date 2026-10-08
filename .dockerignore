@@ -51,5 +51,6 @@ demo
 **/*.heic
 **/*.heif
 **/*.image
+experiments
 **/*.zip
 **/*.7z
