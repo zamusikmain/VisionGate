@@ -1,5 +1,11 @@
 # Final MVP audit — 2026-10-07
 
+## Synthetic stress extension — 2026-10-08
+
+Added tools/barcode_stress.py and eleven infrastructure regression tests without changes to backend analysis/metrics/Decision Engine/thresholds. Real Compose HTTP run: 164 synthetic cases, 46 ACCEPT, 118 RETAKE, zero technical errors; 34 review candidates. Accepted occlusions: Code128 28/63, QR 1/63, all with expected payload. Severe 90%-height Code128 masking can ACCEPT at score100 because the decoder ROI is the surviving band; this is a completeness-policy risk, not an observed wrong decode. Full findings and proposals (not implemented): docs/barcode-stress.md. Generated images/JSON/CSV/Markdown remain ignored under reports, outside real datasets.
+
+Final regressions: Windows 113 passed / 2 symlink skips; Linux Docker 115 passed; frontend 19 passed and production build passed. API config stable before/after study; threshold SHA256 remains unchanged. No synthetic inputs were added to a customer training/calibration dataset and no calibration search was performed.
+
 ## Result and immutable baseline
 
 IMPLEMENTED / VERIFIED: final audit release algorithm_version **1.0.1**. Only objective validation, lifecycle, concurrency and UX bugs were fixed. Decision Engine rules, score weights and thresholds were not changed. No accuracy tuning or calibration grid was run during this audit.
