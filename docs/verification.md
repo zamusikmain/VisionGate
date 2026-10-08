@@ -1,5 +1,9 @@
 # Final MVP audit — 2026-10-07
 
+## Mobile capture assistance — 2026-10-08
+
+Optional local preview hints reuse the existing bounded scheduler, off by default; no network preview or shutter gating. Capability-probed continuous autofocus is nonblocking with default-camera fallback; UI distinguishes requested from reported mode. RETAKE now offers direct camera reopening and alternative selection. Synchronous in-flight submission lock covers same-event double clicks while preserving retry/replacement. Full-frame capture unchanged. Frontend 35 tests and local/Docker build passed, services healthy; real browser RETAKE/mobile RU/EN checked using synthetic blur input. Physical focus accuracy and hint reliability remain unverified. Backend/thresholds/Decision Engine/metrics/API unchanged; no calibration. Details: docs/mobile-camera.md.
+
 ## Mobile camera UX — 2026-10-08
 
 Whole-label visual guide and concise RU/EN instructions added, with object-fit-aware live geometry and responsive resize/orientation handling. Full-frame capture and existing button readiness/busy rules unchanged; no barcode-position gating or guide cropping. Frontend 27 tests and TypeScript/Vite build passed; Docker frontend rebuilt, both Compose services healthy. Browser idle-screen RU/EN inspection at 320x568,390x844,430x932,844x390,1024x768 shows no horizontal overflow. Live stream/canvas behavior tested using simulated video, not physical mobile cameras. Details and limits: docs/mobile-camera.md. Backend/config/Decision Engine/metrics/API unchanged; threshold hash unchanged.
