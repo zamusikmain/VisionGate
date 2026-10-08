@@ -1,5 +1,9 @@
 # Final MVP audit — 2026-10-07
 
+## Mobile camera UX — 2026-10-08
+
+Whole-label visual guide and concise RU/EN instructions added, with object-fit-aware live geometry and responsive resize/orientation handling. Full-frame capture and existing button readiness/busy rules unchanged; no barcode-position gating or guide cropping. Frontend 27 tests and TypeScript/Vite build passed; Docker frontend rebuilt, both Compose services healthy. Browser idle-screen RU/EN inspection at 320x568,390x844,430x932,844x390,1024x768 shows no horizontal overflow. Live stream/canvas behavior tested using simulated video, not physical mobile cameras. Details and limits: docs/mobile-camera.md. Backend/config/Decision Engine/metrics/API unchanged; threshold hash unchanged.
+
 ## Offline Barcode Integrity research — 2026-10-08
 
 Prototype exists only in experiments/ and is excluded from Docker context. No application imports, production/API changes or threshold changes. Full results: docs/barcode-integrity.md; private per-image artifacts: reports/barcode-integrity. Comparison covers all 164 existing scenarios plus 21 normal controls through real HTTP API. Intrinsic continuity flags 8/29 accepted occlusions; with generator-ground-truth expected region, 24/29 (oracle gain, not demonstrated localization). Zero intrinsic false flags among 22 supported normal Code128 controls; QR/absent geometry are unknown, not intact. Crop detection not demonstrated. Pixel-identical short-valid/90%-occluded control proves need for external extent/context in that case. No production integration recommended yet.
