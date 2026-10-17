@@ -6,6 +6,9 @@ __pycache__/
 node_modules/
 dist/
 data/
+data/Samsung/
+data/samsung/
+.model-packages/
 reports/
 .env*
 !.env.example
@@ -88,3 +91,8 @@ Desktop.ini
 *.tar
 *.gz
 *.7z
+*.xlsx
+*.xls
+*.docx
+*.doc
+*.onnx

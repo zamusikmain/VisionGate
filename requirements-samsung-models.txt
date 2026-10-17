@@ -1,0 +1,6 @@
+# Optional isolated CPU inference only. Keep application dependencies unchanged.
+onnxruntime==1.31.0
+pyclipper==1.4.0
+PyYAML==6.0.3
+flatbuffers==25.12.19
+protobuf==7.36.2

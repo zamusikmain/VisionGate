@@ -8,6 +8,8 @@ services:
     dockerContext: .
     healthCheckPath: /api/v1/health
     envVars:
+      - key: SAMSUNG_ENABLED
+        value: "false"
       - key: STORE_ANALYSIS_IMAGES
         value: "false"
       - key: HISTORY_DB

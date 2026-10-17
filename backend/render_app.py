@@ -11,7 +11,7 @@ from backend.main import app as api
 
 
 def create_app(static_dir: str | Path | None = None):
-    root = Path(static_dir or os.getenv('FRONTEND_DIST', '/app/frontend/dist'))
+    root = Path(static_dir or os.getenv('FRONTEND_DIST', str(Path(__file__).resolve().parents[1]/'frontend/dist')))
     if not (root / 'index.html').is_file():
         raise RuntimeError('Built frontend is missing')
 
@@ -26,6 +26,7 @@ def create_app(static_dir: str | Path | None = None):
     # runtime data, configuration and source directories are never mounted.
     return Starlette(routes=[
         Route('/', index),
+        Route('/samsung', index),
         Mount('/assets', StaticFiles(directory=root / 'assets')),
         Mount('/', app=api),
     ])

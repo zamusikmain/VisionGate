@@ -1,9 +1,11 @@
 .python-packages
+.model-packages
 .audit-packages
 .test-*
 .env*
 .venv
 frontend/node_modules
+**/node_modules
 frontend/dist
 data
 reports
@@ -54,3 +56,8 @@ demo
 experiments
 **/*.zip
 **/*.7z
+**/*.xlsx
+**/*.xls
+**/*.docx
+**/*.doc
+**/*.onnx

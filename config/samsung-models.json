@@ -1,0 +1,6 @@
+{
+  "mobile-det": {"repo":"PaddlePaddle/PP-OCRv5_mobile_det_onnx","revision":"e6f4fa85f00e168c862bc462aebca69eef9b3d3d","license":"Apache-2.0","bytes":4826518,"sha256":"a431985659dc921974177a95adcfbb90fd9e51989a5e04d70d0b75f597b6e61d","config_sha256":"98069072e1b6b37d727fd9d9f11725faa46d6ea0de012f2ed26caea011c37699"},
+  "latin-rec": {"repo":"PaddlePaddle/latin_PP-OCRv5_mobile_rec_onnx","revision":"89d3a50e2c27e2e7cceeab0e944c25c807d5db4f","license":"Apache-2.0","bytes":8042023,"sha256":"7888113072263cb471b93f66dd5e2ad70548dc526fa1ace760d0d973dd121498","config_sha256":"0bbe984570f597af3638e50bdf2e8276f3ab26a61966096538b3b0d1849f5c84"},
+  "server-det": {"repo":"PaddlePaddle/PP-OCRv5_server_det_onnx","revision":"dcf248c4dcc064c6d030db241255f9e8fbc6733a","license":"Apache-2.0","bytes":88116791,"sha256":"10803475a591f7dc623e24670fb5752ec94d39a1f8cf069aac1b6f0ce19cfc85","config_sha256":"28fb721efc3634fc8aa677e474b9602cb815a91cf569ef357a7a553d7b3ce685"},
+  "server-rec": {"repo":"PaddlePaddle/PP-OCRv5_server_rec_onnx","revision":"b70df217f4fd99d14f970bad092cebe7d74cc4d1","license":"Apache-2.0","bytes":84503027,"sha256":"d9dc333c9c7b042c6dffb8e33d72b6f65c9c1d463d0a3c2f78174fea55e94752","config_sha256":"2c719dba044c4e2228aef8ff92f5f575394d75d24c16de096a33b7cfd902f66d"}
+}

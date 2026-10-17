@@ -7,6 +7,8 @@ import {thresholdLabel} from './threshold-labels';
 import {uploadError,apiErrorKey} from './upload';
 import {CameraGuide} from './camera-guide';
 import {CameraAssist} from './camera-assist';
+import {SamsungPage} from './samsung';
+import {ModeNav} from './mode-nav';
 
 function initialLanguage():Lang {try{return localStorage.getItem('lang')==='en'?'en':'ru'}catch{return 'ru'}}
 
@@ -29,7 +31,7 @@ export function App(){
  async function loadHistory(){try{const r=await fetch('/api/v1/history',{headers:{'X-Admin-Token':token}});if(!r.ok)throw Error();setHistory(await r.json());setNotice('')}catch{setHistory([]);setNotice('adminError')}}
  async function save(){try{const r=await fetch('/api/v1/config',{method:'PUT',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify(thresholds)});if(!r.ok)throw Error();setNotice('saved')}catch{setNotice('adminError')}}
  return <div className="app"><header><div className="brand"><span className="brand-mark">▥</span><div><strong>{t('product')}</strong><small>{t('subtitle')}</small></div></div><button className="language" onClick={()=>setLang(lang==='ru'?'en':'ru')}>{lang==='ru'?'EN':'RU'}</button></header>
- <main><div className="intro"><span className="eyebrow">{t('eyebrow')}</span><h1>{t('guide')}</h1><p>{t('privacy')}</p></div>
+ <main><ModeNav active="barcode" lang={lang}/><div className="intro"><span className="eyebrow">{t('eyebrow')}</span><h1>{t('guide')}</h1><p>{t('privacy')}</p></div>
  <section className="workspace"><div className={`viewer${camera?' camera-view':''}`}>{camera?<video ref={video} autoPlay playsInline muted aria-describedby="camera-help" onCanPlay={()=>setCameraReady(true)}/>:preview?<img src={preview} alt={t('upload')}/>:<div className="placeholder" aria-hidden="true"><span>▥</span></div>}{camera?<CameraGuide video={video}/>:!preview&&<div className="guide label-guide idle-guide" aria-hidden="true"><i/><i/><i/><i/></div>}{busy&&<div className="loading" role="status">{t('loading')}</div>}</div>
  {!preview&&<div className="camera-help" id="camera-help"><p>{t('cameraInstruction')}</p><small>{t('fullFrameHint')}</small></div>}
  {camera&&<CameraAssist video={video} stream={stream.current} t={t}/>}
@@ -40,7 +42,7 @@ export function App(){
  {panel&&<section className="admin"><div className="panel-heading"><h2>{t(panel as Key)}</h2><button onClick={()=>setPanel('')}>{t('close')}</button></div><label>{t('token')}<input type="password" value={token} onChange={e=>setToken(e.target.value)} autoComplete="off"/></label>{panel==='settings'?<><p>{t('initial')}</p><div className="settings-grid">{Object.entries(thresholds).map(([k,v])=><label key={k}>{thresholdLabel(k,lang).name}<small>{thresholdLabel(k,lang).description}</small><small>{t('limits')}: {schema[k]?.minimum??schema[k]?.exclusiveMinimum} — {schema[k]?.maximum}</small><input type="number" aria-label={thresholdLabel(k,lang).name} step="any" min={schema[k]?.minimum??schema[k]?.exclusiveMinimum} max={schema[k]?.maximum} value={v} onChange={e=>setThresholds({...thresholds,[k]:Number(e.target.value)})}/></label>)}</div><div className="actions"><button onClick={save}>{t('save')}</button><button onClick={()=>setThresholds(defaults)}>{t('reset')}</button></div></>:<><button onClick={loadHistory}>{t('history')}</button>{history.length===0?<p>{t('empty')}</p>:history.map(r=><div key={r.request_id} className="history-row"><span>{new Date(r.timestamp).toLocaleString(lang)}</span><strong>{t(r.decision==='ACCEPT'?'accepted':'retake')}</strong><span>{r.quality_score}</span></div>)}</>}{notice&&<p role="status">{t(notice)}</p>}</section>}
  </main><footer>{t('product')} · v1.0.1</footer></div>
 }
-const root=document.getElementById('root');if(root)createRoot(root).render(<App/>);
+const root=document.getElementById('root');if(root)createRoot(root).render(window.location.pathname==='/samsung'?<SamsungPage/>:<App/>);
 
 
 
