@@ -1,0 +1,9 @@
+# OPTIONAL research environment only; never required by VisionGate runtime.
+# Ultralytics models/code: AGPL-3.0 or Enterprise. Review before distribution.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.1+cpu
+torchvision==0.29.1+cpu
+ultralytics==8.4.180
+onnx==1.23.2
+onnxruntime==1.31.0
+psutil==7.2.2

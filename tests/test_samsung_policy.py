@@ -26,6 +26,17 @@ def test_constant_image_proves_no_information_without_claiming_generic_blur():
     assert classify_case([d,s])['rejection_status']=='REJECTED_CONFIRMED'
 
 
+def test_optional_conflict_does_not_change_identity_on_policy_reapplication():
+    image=np.arange(240*320*3,dtype=np.uint8).reshape(240,320,3)
+    p=photo('scan')
+    p['fields']=[dict(key='imei1',format_valid=True,conflicted=False)]
+    p['barcodes']=[dict(type='Code 128',checksum_valid=True)]
+    p['conflicting_fields']=['sku','model']
+    assert apply_role_policy(p,image)['checks']['identifier_readable']['state']=='PASS'
+    p['conflicting_fields'].append('imei1')
+    assert apply_role_policy(p,image)['checks']['identifier_readable']['state']=='UNKNOWN'
+
+
 def line(text,x,y,width=100):
     return dict(text=text,words=[dict(x=x,y=y,width=width,height=15,text=text)])
 

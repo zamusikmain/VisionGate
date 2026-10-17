@@ -5,8 +5,8 @@ import os
 from pathlib import Path
 import re
 import subprocess
-import tempfile
 import cv2
+from .private_temp import private_directory
 
 
 def read_screen_ui(image,cache_dir=None):
@@ -19,7 +19,7 @@ def read_screen_ui(image,cache_dir=None):
         result=json.loads(cached.read_text(encoding='utf-8'));result['cache_hit']=True;return result
     folder=Path('reports/.screen-temp');folder.mkdir(parents=True,exist_ok=True)
     try:
-        with tempfile.TemporaryDirectory(dir=folder.resolve()) as tmp:
+        with private_directory(folder) as tmp:
             target=Path(tmp)/'pixels.png';cv2.imencode('.png',pixels)[1].tofile(str(target))
             manifest=Path(tmp)/'manifest.json';manifest.write_text(json.dumps([str(target)]),encoding='utf-8')
             process=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-File',str(script),'-ManifestPath',str(manifest)],capture_output=True,timeout=30)

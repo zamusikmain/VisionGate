@@ -7,14 +7,14 @@ PRIVATE_DIRS = {
     'analysis-images', 'analysis_images', 'private-images', 'customer-data',
     'customer-datasets', 'tmp', 'temp', '.aws', '.ssh', '.venv',
     '.python-packages', '.model-packages', '.audit-packages', 'node_modules', 'dist', 'build',
-    '__pycache__', '.vscode', '.idea', '.pytest_cache', '.cache',
+    '__pycache__', '.vscode', '.idea', '.pytest_cache', '.cache', 'runs', '.visual-venv',
 }
 PRIVATE_EXTENSIONS = {
     '.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.gif', '.bmp',
     '.tif', '.tiff', '.image', '.log', '.db', '.sqlite', '.sqlite3',
     '.avif', '.dng', '.raw', '.cr2', '.nef', '.jfif',
     '.pem', '.key', '.p12', '.pfx', '.zip', '.7z', '.tar', '.gz',
-    '.xlsx', '.xls', '.docx', '.doc', '.onnx',
+    '.xlsx', '.xls', '.docx', '.doc', '.onnx', '.pt', '.pth', '.safetensors',
 }
 KEEP = {f'{directory}/{label}/.gitkeep'
         for directory in ('dataset', 'holdout') for label in ('good', 'bad')}

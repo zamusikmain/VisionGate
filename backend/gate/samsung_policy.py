@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 
-VERSION='role-policy-1'
+VERSION='role-policy-1.1'
 COMMON=('identification_visible','identifier_readable','barcode_readable',
         'identification_not_cropped','information_image_quality','screen_recapture_absent')
 REQUIRED={'device':('device_top_visible',)+COMMON,'scan':COMMON}
@@ -29,7 +29,9 @@ def apply_role_policy(photo,image):
         # visible. Without verified target coverage, retain UNKNOWN rather than
         # treat every frame-edge contact as either PASS or a confirmed crop.
         put('identification_not_cropped','UNKNOWN','Readable content exists, but complete critical-region coverage has not been established. Optional label edges are not compulsory.')
-    if photo.get('conflicting_fields') or any(f.get('conflicted') for f in identity):
+    # classify_case also records optional model/SKU conflicts on the photo.
+    # Reapplying policy must not promote those advisories to identity blockers.
+    if set(photo.get('conflicting_fields',[])) & {'imei','imei1','imei2','serial'} or any(f.get('conflicted') for f in identity):
         put('identifier_readable','UNKNOWN','Variants disagree; no convenient identifier was selected.')
     old=photo['checks']
     from .samsung_screen import gallery_evidence

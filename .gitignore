@@ -1,4 +1,5 @@
 .venv/
+.visual-venv/
 .python-packages/
 .audit-packages/
 __pycache__/
@@ -96,3 +97,8 @@ Desktop.ini
 *.docx
 *.doc
 *.onnx
+# Public and corporate-trained experiment weights stay local.
+*.pt
+*.pth
+*.safetensors
+runs/

@@ -13,7 +13,7 @@ function Await-Operation($Operation,$Type) {
 $engines=@([Windows.Media.Ocr.OcrEngine]::AvailableRecognizerLanguages | Where-Object {$_.LanguageTag -eq 'ru' -or $_.LanguageTag -eq 'ru-RU' -or $_.LanguageTag -eq 'en-US'} | ForEach-Object {[Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage($_)})
 $paths=Get-Content -LiteralPath $ManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $results=@(foreach ($path in $paths) {
- $reads=@();$stream=$null;$bitmap=$null
+ $reads=@();$stream=$null;$bitmap=$null;$fs=$null
  try {
   $fs=[IO.File]::OpenRead([string]$path);$stream=[System.IO.WindowsRuntimeStreamExtensions]::AsRandomAccessStream($fs)
   $decoder=Await-Operation ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
@@ -24,6 +24,6 @@ $results=@(foreach ($path in $paths) {
   }
   @{status='OK';reads=$reads}
  } catch { @{status='UNAVAILABLE';reads=@()} }
- finally {if ($bitmap) {$bitmap.Dispose()};if ($stream) {$stream.Dispose()}}
+ finally {if ($bitmap) {$bitmap.Dispose()};if ($stream) {$stream.Dispose()};if ($fs) {$fs.Dispose()}}
 })
 ConvertTo-Json -InputObject $results -Depth 9 -Compress

@@ -20,7 +20,7 @@ from .samsung_barcodes import enhanced_barcodes, scaled_barcodes, LINEAR_IMEI_FO
 from .samsung_preprocessing import roi_variant_matrix,variant_to_original
 from .samsung_vision import locate_labels, rectify, variants, diagnostic, phone_frame_candidates, box_geometry_candidates
 
-VERSION='samsung-auto-0.6.0'
+VERSION='samsung-auto-0.9.0'
 REQUIRED=('label_present','label_complete','box_evidence','imei_readable',
           'no_crop','no_field_glare','no_field_occlusion','no_critical_blur','physical_object')
 ADVISORY=('model_readable','serial_readable')
@@ -57,10 +57,18 @@ def summarize_fields(records):
         barcode=any(e['source']=='barcode' and e['format_valid'] for e in evidence)
         repeated=len(methods)>=2
         candidates={v for (k,v) in grouped if k==key}
-        conflict=key in {'imei1','imei2','model','sku','serial'} and len(candidates)>1
+        raw_conflict=key in {'imei1','imei2','model','sku','serial'} and len(candidates)>1
+        # An invalid checksum string remains a raw OCR observation, but cannot
+        # contradict a unique indexed IMEI exactly corroborated by a decode.
+        # Two valid alternatives still conflict, even if only one is decoded.
+        admissible={v for (k,v),items in grouped.items() if k==key and
+                    valid_imei(v) and all(e['format_valid'] for e in items)}
+        resolved_invalid_only=(key in {'imei1','imei2'} and barcode and
+                               admissible=={value} and valid_imei(value))
+        conflict=raw_conflict and not resolved_invalid_only
         fields.append(dict(key=key,value=value,format_valid=all(e['format_valid'] for e in evidence),
             confirmed=barcode and not conflict,mismatch_eligible=barcode and not conflict,
-            conflicted=conflict,repeat_consistent=repeated,independent_evidence=False,
+            conflicted=conflict,raw_conflicted=raw_conflict,repeat_consistent=repeated,independent_evidence=False,
             confirmation='conflicting_readings' if conflict else 'barcode_checksum_and_format' if barcode else 'same_photo_repeat_only' if repeated else 'single_read',
             evidence=evidence))
     return fields
@@ -68,6 +76,34 @@ def summarize_fields(records):
 
 def _union_bounds(boxes):
     return [min(b[0] for b in boxes),min(b[1] for b in boxes),max(b[2] for b in boxes),max(b[3] for b in boxes)]
+
+
+def indexed_candidate_mismatches(photos):
+    """Prove disjointness without selecting a preferred conflicting reading.
+
+    Every format-valid alternative must be corroborated by an actual linear
+    decode on its own photo. An uncorroborated valid alternative blocks proof.
+    Invalid OCR strings remain in fields/findings; none are repaired or selected.
+    Unindexed single-SIM subsets are deliberately not compared this way.
+    """
+    findings=[];comparisons=[]
+    for key in ('imei1','imei2'):
+        sides=[]
+        for p in photos:
+            candidates={f['value'] for f in p['fields'] if f['key']==key and f['format_valid'] and valid_imei(f['value'])}
+            decoded={b['value'] for b in p.get('barcodes',[]) if b.get('checksum_valid') and
+                     b['type'] in LINEAR_IMEI_FORMATS and valid_imei(b['value'])}
+            sides.append(dict(role=p['role'],sha256=p['sha256'],candidates=sorted(candidates),
+                              decoded_imeis=sorted(decoded),all_corroborated=bool(candidates) and candidates<=decoded))
+        proof=any(a['role']=='device' and b['role']=='scan' and a['sha256']!=b['sha256'] and
+                  a['all_corroborated'] and b['all_corroborated'] and
+                  not set(a['candidates']).intersection(b['candidates']) and
+                  not set(a['decoded_imeis']).intersection(b['decoded_imeis']) for a in sides for b in sides)
+        comparisons.append(dict(field=key,state='FAIL' if proof else 'UNKNOWN',strategy='all_valid_indexed_candidates_corroborated',sides=sides,
+                                selected_value=None,notice='No PASS from this comparison; ambiguous or incomplete matching sets do not prove photo quality.'))
+        if proof:findings.append(dict(code=key.upper()+'_CANDIDATE_SET_MISMATCH',state='FAIL',category='identifier_mismatch',
+            reason='All format-valid indexed candidates on both photos are exactly corroborated by linear barcodes and the sets are disjoint. No conflicting value was selected; invalid readings are retained.'))
+    return findings,comparisons
 
 
 def analyze_photo(image, data, role, use_ocr=True, cache_dir=None, diagnostic_dir=None):
@@ -280,6 +316,17 @@ def classify_case(photos):
             if field['key'] in {'imei1','imei2','model','sku','serial'}:
                 grouped_values[field['key']].add(field['value'].removesuffix('/DS') if field['key']=='model' else field['value'])
         p['conflicting_fields']=sorted(k for k,v in grouped_values.items() if len(v)>1)
+        p['raw_conflicting_fields']=list(p['conflicting_fields'])
+        decoded={b['value'] for b in p.get('barcodes',[]) if b.get('checksum_valid') and
+                 b.get('type') in LINEAR_IMEI_FORMATS and valid_imei(b['value'])}
+        for key in ('imei1','imei2'):
+            relevant=[f for f in p['fields'] if f['key']==key]
+            valid={f['value'] for f in relevant if f['format_valid'] and valid_imei(f['value'])}
+            if key in p['conflicting_fields'] and len(valid)==1 and valid<=decoded and any(
+                    f['value'] in valid and f.get('confirmed') and not f.get('conflicted') for f in relevant):
+                p['conflicting_fields'].remove(key)
+                advisories.append(dict(code='INVALID_'+key.upper()+'_OCR_ALTERNATIVES',state='UNKNOWN',
+                    photo_sha256=p['sha256'],reason='Invalid checksum observations retained; the unique valid indexed value is exactly corroborated by a linear decode. This does not prove photo completeness.'))
         for key in p['conflicting_fields']:
             target=advisories if p.get('policy_profile')=='role-v1' and key in {'model','sku'} else findings
             target.append(dict(code='CONFLICTING_'+key.upper()+'_READINGS',state='UNKNOWN',
@@ -321,15 +368,19 @@ def classify_case(photos):
         elif key=='imei' and not match:findings.append(dict(code=key.upper()+'_CONSISTENCY',state='UNKNOWN',category='insufficient_evidence'))
         if key=='imei' and not comparable and len(available)>1 and any(not a.intersection(b) for i,a in enumerate(available) for b in available[i+1:]):
             findings.append(dict(code='POSSIBLE_IMEI_MISMATCH',state='UNKNOWN',category='insufficient_evidence',reason='Unindexed partial sets cannot establish which SIM slot is being compared.'))
+    candidate_findings,candidate_comparisons=indexed_candidate_mismatches(photos)
+    findings.extend(candidate_findings);comparisons.extend(candidate_comparisons)
     if len({p['sha256'] for p in photos})<len(photos):
         findings.append(dict(code='REUSED_IMAGE',state='UNKNOWN',category='insufficient_evidence'))
     failures=[f for f in findings if f['state']=='FAIL'];unknown=[f for f in findings if f['state']=='UNKNOWN']
     diagnostic_state='FAIL' if failures else 'UNKNOWN' if unknown else 'PASS'
     reason='identifier_mismatch' if any(f['category']=='identifier_mismatch' for f in failures) else 'detected_defect' if failures else 'insufficient_evidence' if unknown else 'all_required_checks_passed'
     confirmed=any(f['category'] in {'identifier_mismatch','proven_defect','input_error'} for f in failures)
+    evidence_decision='APPROVED' if diagnostic_state=='PASS' else 'REJECTED' if confirmed else 'REVIEW'
     return dict(final_decision='APPROVED' if diagnostic_state=='PASS' else 'REJECTED',diagnostic_state=diagnostic_state,
+                evidence_decision=evidence_decision,
                 rejection_status=None if diagnostic_state=='PASS' else 'REJECTED_CONFIRMED' if confirmed else 'REJECTED_UNVERIFIED',
                 confirmed_decision=diagnostic_state=='PASS' or confirmed,advisories=advisories,
                 review_required=bool(unknown),rejection_basis=reason,findings=findings,comparisons=comparisons,
-                decisive_coverage=diagnostic_state!='UNKNOWN',photos=photos,algorithm_version=VERSION,
+                decisive_coverage=evidence_decision!='REVIEW',photos=photos,algorithm_version=VERSION,
                 policy_version='fail-closed-v2',notice='Binary rejection for insufficient evidence is not a proven photo defect. Preliminary engineering detectors, no independent Samsung accuracy claim.')

@@ -17,7 +17,8 @@ def build(output):
             for name in names:
                 p=Path(directory)/name
                 if p.is_file() and not p.is_symlink() and p.suffix in extensions:files.append(p)
-    files.extend(root/p for p in ('requirements.txt','requirements-samsung-export.txt','requirements-samsung-models.txt','README.md','start-samsung.ps1'))
+    files.extend(root/p for p in ('.gitignore','.dockerignore','requirements.txt','requirements-samsung-export.txt','requirements-samsung-models.txt','requirements-samsung-visual-experiment.txt','README.md','start-samsung.ps1',
+                                 'experiments/__init__.py','experiments/barcode_integrity.py','experiments/run_integrity.py'))
     files.extend(root/'frontend'/p for p in ('package.json','package-lock.json','tsconfig.json','vite.config.ts','index.html'))
     if output in files:raise ValueError('Output must not overwrite source')
     output.parent.mkdir(parents=True,exist_ok=True)

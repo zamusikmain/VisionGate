@@ -4,8 +4,8 @@ import os
 from pathlib import Path
 import re
 import subprocess
-import tempfile
 import hashlib
+from .private_temp import private_directory
 
 import cv2
 
@@ -20,7 +20,7 @@ def read_local_text(image):
     try:
         private_root = Path(os.getenv('SAMSUNG_OCR_TEMP_DIR', 'reports/.ocr-temp'))
         private_root.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix='visiongate-ocr-', dir=private_root.resolve()) as folder:
+        with private_directory(private_root,prefix='visiongate-ocr-') as folder:
             path = Path(folder)/'input.png'
             ok, buffer = cv2.imencode('.png', bounded)
             if not ok: return {'status': 'LOCAL_OCR_INPUT_ERROR', 'lines': []}
@@ -64,7 +64,7 @@ def read_local_variants(images, cache_dir=None):
     cache=Path(cache_dir) if cache_dir else None
     if cache:cache.mkdir(parents=True,exist_ok=True)
     output=[None]*len(images);missing=[]
-    with tempfile.TemporaryDirectory(prefix='variants-',dir=private.resolve()) as folder:
+    with private_directory(private,prefix='variants-') as folder:
         paths=[]
         for i,image in enumerate(images):
             ok,buffer=cv2.imencode('.png',image)

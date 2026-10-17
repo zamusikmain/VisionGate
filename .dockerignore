@@ -61,3 +61,8 @@ experiments
 **/*.docx
 **/*.doc
 **/*.onnx
+**/*.pt
+**/*.pth
+**/*.safetensors
+runs
+.visual-venv

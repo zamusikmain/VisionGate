@@ -26,11 +26,14 @@ def test_same_photo_repeats_do_not_confirm_and_conflicts_disable_slot_matching()
     assert any(f['code']=='CONFLICTING_IMEI1_READINGS' for f in result['findings'])
 
 
-def test_invalid_alternative_is_retained_not_repaired_or_selected():
+def test_invalid_alternative_is_retained_without_overriding_exact_decode():
     records=[record('imei1','490154203237518'),record('imei1','490154203237519','illumination',valid=False),
              record('imei','490154203237518',source='barcode')]
     slots=[f for f in summarize_fields(records) if f['key']=='imei1']
-    assert len(slots)==2 and all(f['conflicted'] and not f['confirmed'] for f in slots)
+    assert len(slots)==2 and all(f['raw_conflicted'] for f in slots)
+    assert {f['value'] for f in slots}=={'490154203237518','490154203237519'}
+    assert slots[0]['confirmed'] and not slots[0]['independent_evidence']
+    assert not slots[1]['confirmed'] and not slots[1]['format_valid']
 
 
 def test_illumination_gate_is_field_based_not_expected_value_or_watermark():

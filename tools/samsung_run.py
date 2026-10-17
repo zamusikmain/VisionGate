@@ -17,7 +17,7 @@ from backend.gate.samsung_paths import input_archives
 
 def fingerprint():
     root=Path(__file__).resolve().parents[1]
-    files=['backend/gate/samsung_auto.py','backend/gate/samsung_vision.py','backend/gate/samsung_barcodes.py','backend/gate/local_ocr.py','tools/windows_ocr.ps1','backend/gate/samsung_pretrained.py','backend/gate/pretrained_ocr.py','backend/gate/samsung_preprocessing.py','backend/gate/samsung_policy.py','backend/gate/samsung_screen.py','tools/windows_ui_ocr.ps1']
+    files=['backend/gate/samsung_auto.py','backend/gate/samsung_vision.py','backend/gate/samsung_barcodes.py','backend/gate/local_ocr.py','backend/gate/private_temp.py','tools/windows_ocr.ps1','backend/gate/samsung_pretrained.py','backend/gate/pretrained_ocr.py','backend/gate/samsung_preprocessing.py','backend/gate/samsung_policy.py','backend/gate/samsung_screen.py','tools/windows_ui_ocr.ps1']
     profile=json.dumps([os.getenv('SAMSUNG_OCR_ENGINE','legacy'),os.getenv('SAMSUNG_OCR_DETECTOR','mobile'),os.getenv('SAMSUNG_RECOGNITION_PROFILE','original'),os.getenv('SAMSUNG_POLICY_PROFILE','role-v1')])
     return hashlib.sha256(profile.encode()+b''.join((root/f).read_bytes() for f in files)).hexdigest()[:16]
 
@@ -73,7 +73,7 @@ def swaps(cases):
                 notice='Scan permutations across different provided cases. A binary rejection for unknown data is not successful mismatch detection.')
 
 
-def run(paths, output, ocr=True, refresh=False,reference_xlsx=None):
+def run(paths, output, ocr=True, refresh=False,reference_xlsx=None,cache_enabled=True):
     output=Path(output);output.mkdir(parents=True,exist_ok=True)
     paths=list(map(Path,paths))
     if len({p.name for p in paths})!=len(paths):raise ValueError('DUPLICATE_ARCHIVE_NAMES')
@@ -90,14 +90,14 @@ def run(paths, output, ocr=True, refresh=False,reference_xlsx=None):
         cached=cache/f'{row["sha256"]}-{row["role"]}-{key}-{int(ocr)}.json'
         if row['status']!='OK':
             photo=invalid_photo(row['sha256'],row['role'],row['status'])
-        elif cached.exists() and not refresh:photo=json.loads(cached.read_text(encoding='utf-8'))
+        elif cache_enabled and cached.exists() and not refresh:photo=json.loads(cached.read_text(encoding='utf-8'))
         else:
             with zipfile.ZipFile(source[row['archive']]) as z:data=z.read(row['path'])
             if hashlib.sha256(data).hexdigest()!=row['sha256']:raise ValueError('SOURCE_CHANGED')
-            try:photo=analyze_photo(read_image(data),data,row['role'],use_ocr=ocr,cache_dir=output/'ocr-cache',diagnostic_dir=output/'diagnostics')
+            try:photo=analyze_photo(read_image(data),data,row['role'],use_ocr=ocr,cache_dir=output/'ocr-cache' if cache_enabled else None,diagnostic_dir=output/'diagnostics')
             except (InvalidImage,ValueError,cv2.error) as exc:
                 photo=invalid_photo(row['sha256'],row['role'],str(exc) if isinstance(exc,InvalidImage) else 'ANALYSIS_ERROR')
-            cached.write_text(json.dumps(photo,ensure_ascii=False,indent=2),encoding='utf-8')
+            if cache_enabled:cached.write_text(json.dumps(photo,ensure_ascii=False,indent=2),encoding='utf-8')
         grouped.setdefault(row['case_id'],[]).append(photo)
         print(f'Photos analyzed: {len(seen)}/{total}',flush=True)
     cases=[]
@@ -115,7 +115,8 @@ def run(paths, output, ocr=True, refresh=False,reference_xlsx=None):
         from backend.gate.samsung_reference import final_status_labels
         expected=final_status_labels(reference_xlsx)
     report=dict(cases=cases,evaluation=evaluate(cases,expected),permutations=swaps(cases),
-                elapsed_seconds=round(time.perf_counter()-start,2),pipeline_fingerprint=key,intake=intake)
+                elapsed_seconds=round(time.perf_counter()-start,2),pipeline_fingerprint=key,intake=intake,
+                cache_policy=dict(enabled=cache_enabled,preexisting_ocr_cache_used=False if not cache_enabled else 'allowed'))
     (output/'results.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps({k:v for k,v in report['evaluation'].items() if k not in {'rows'}},ensure_ascii=True,indent=2))
     return report
@@ -135,8 +136,9 @@ def main():
     p.add_argument('--output-dir',type=Path,default=Path('reports/samsung-auto'))
     p.add_argument('--reference-xlsx',type=Path,help='Evaluation only: use Final_Status after predictions, never Registration Status')
     p.add_argument('--no-ocr',action='store_true');p.add_argument('--refresh',action='store_true')
+    p.add_argument('--no-cache',action='store_true',help='Disable reading/writing photo and OCR result caches, including existing files')
     a=p.parse_args()
-    try:run(a.archives or input_archives(a.archive_dir),a.output_dir,not a.no_ocr,a.refresh,a.reference_xlsx)
+    try:run(a.archives or input_archives(a.archive_dir),a.output_dir,not a.no_ocr,a.refresh,a.reference_xlsx,not a.no_cache)
     except (zipfile.BadZipFile,FileNotFoundError,ValueError) as exc:
         p.exit(2,'Samsung batch input error: '+str(exc)+'\n')
 
