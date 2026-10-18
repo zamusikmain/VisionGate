@@ -48,9 +48,9 @@ def export_report(report,output):
             table.tableStyleInfo=TableStyleInfo(name='TableStyleMedium2',showRowStripes=True)
             s.add_table(table)
         return s
-    s=sheet('Cases','Samsung Photo Validation — known development examples',
+    s=sheet('Cases','Samsung Photo Validation — results',
             ['Case ID','Expected','Actual','Diagnostic','Review','Basis','Findings'],cases,[22,16,16,16,12,30,90])
-    s['A4']='Known examples, not an independent evaluation. Rejection for UNKNOWN is not a proven defect.'
+    s['A4']=report.get('evaluation_notice','Known examples, not an independent evaluation. Rejection for UNKNOWN is not a proven defect.')
     s['A5']='APPROVED';s['B5']=sum(r['actual']=='APPROVED' for r in rows)
     s['C5']='REJECTED';s['D5']=sum(r['actual']=='REJECTED' for r in rows)
     s['A6']='False APPROVED';s['B6']=report['evaluation']['false_approved']
@@ -59,7 +59,11 @@ def export_report(report,output):
           ['Case ID','Role','SHA-256','Width','Height','Label support','Confirmed IMEI','Recognized model','Non-PASS checks'],photos,[22,12,70,12,12,20,34,25,90])
     sheet('Fields','Recognition evidence — consensus is not independent confirmation',
           ['Case ID','Role','Field','Literal value','Format valid','Recognized','Confirmation','Source','Variants'],fields,[22,12,20,30,16,16,34,28,90])
-    target=Path(output);target.parent.mkdir(parents=True,exist_ok=True);wb.save(target)
+    target=output
+    if not hasattr(output,'write'):
+        target=Path(output);target.parent.mkdir(parents=True,exist_ok=True)
+    wb.save(target)
+    if hasattr(target,'seek'):target.seek(0)
     loaded=load_workbook(target,data_only=False)
     for name,data in [('Cases',cases),('Photos',photos),('Fields',fields)]:
         for ri,row in enumerate(data,9):

@@ -363,13 +363,21 @@ def classify_case(photos):
         match=len(sets)>=2 and all(sets) and all(v==sets[0] for v in sets)
         status='FAIL' if mismatch else 'PASS' if match else 'UNKNOWN'
         comparisons.append(dict(field=key,state=status,values=[sorted(v) for v in sets]))
-        if mismatch:findings.append(dict(code=key.upper()+'_MISMATCH',state='FAIL',category='identifier_mismatch'))
-        elif discrepancy:findings.append(dict(code='POSSIBLE_'+key.upper()+'_MISMATCH',state='UNKNOWN',category='insufficient_evidence',reason='Repeat OCR consensus is not independent confirmation.'))
+        target=advisories if key in {'model','sku'} and all(p.get('policy_profile')=='role-v1' for p in photos) else findings
+        if mismatch:target.append(dict(code=key.upper()+'_MISMATCH',state='FAIL',category='identifier_mismatch'))
+        elif discrepancy:target.append(dict(code='POSSIBLE_'+key.upper()+'_MISMATCH',state='UNKNOWN',category='insufficient_evidence',reason='Repeat OCR consensus is not independent confirmation.'))
         elif key=='imei' and not match:findings.append(dict(code=key.upper()+'_CONSISTENCY',state='UNKNOWN',category='insufficient_evidence'))
         if key=='imei' and not comparable and len(available)>1 and any(not a.intersection(b) for i,a in enumerate(available) for b in available[i+1:]):
             findings.append(dict(code='POSSIBLE_IMEI_MISMATCH',state='UNKNOWN',category='insufficient_evidence',reason='Unindexed partial sets cannot establish which SIM slot is being compared.'))
     candidate_findings,candidate_comparisons=indexed_candidate_mismatches(photos)
     findings.extend(candidate_findings);comparisons.extend(candidate_comparisons)
+    # The official IMEI/SN alternatives do not require an absent IMEI when
+    # supported, unambiguous serials already match. Existing IMEI evidence and
+    # conflicts still need their own resolution; no visual UNKNOWN is removed.
+    serial_match=any(c['field']=='serial' and c['state']=='PASS' for c in comparisons)
+    has_imei=any(f['key'].startswith('imei') and f['format_valid'] for p in photos for f in p['fields'])
+    if serial_match and not has_imei and all(p.get('policy_profile')=='role-v1' for p in photos):
+        findings=[f for f in findings if f['code']!='IMEI_CONSISTENCY']
     if len({p['sha256'] for p in photos})<len(photos):
         findings.append(dict(code='REUSED_IMAGE',state='UNKNOWN',category='insufficient_evidence'))
     failures=[f for f in findings if f['state']=='FAIL'];unknown=[f for f in findings if f['state']=='UNKNOWN']

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 from fastapi import FastAPI, APIRouter, UploadFile, File, Request, HTTPException, Header
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.exceptions import RequestValidationError
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -207,5 +207,34 @@ def process_samsung_case(device,device_mime,scan,scan_mime):
     finally:analysis_slots.release()
 
 
-app.include_router(analyze_router)
 app.include_router(case_router)
+
+from backend.gate.samsung_web import preview_archive, export_cases, ExportRequest
+
+@analyze_router.post('/api/v1/samsung/batch/preview')
+async def samsung_batch_preview(request:Request, image:UploadFile=File(...)):
+    try:
+        form=await request.form()
+        if set(form)!={'image'} or len(form.getlist('image'))!=1:raise HTTPException(422,'INVALID_REQUEST')
+        data=await image.read(MAX_UPLOAD_BYTES+1)
+        def work():
+            if not analysis_slots.acquire(blocking=False):raise HTTPException(503,'BUSY')
+            try:return preview_archive(data)
+            finally:analysis_slots.release()
+        return await run_in_threadpool(work)
+    except ValueError as exc:
+        code=str(exc)
+        raise HTTPException(413 if code in {'FILE_TOO_LARGE','ARCHIVES_TOO_LARGE','TOO_MANY_ENTRIES'} else 422,code) from exc
+    finally:await image.close()
+
+@app.post('/api/v1/samsung/export')
+def samsung_export(payload:ExportRequest):
+    if not analysis_slots.acquire(blocking=False):raise HTTPException(503,'BUSY')
+    try:
+        try:data=export_cases(payload)
+        except ImportError as exc:raise HTTPException(503,'EXPORT_DEPENDENCY_MISSING') from exc
+        return Response(data,media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        headers={'Content-Disposition':'attachment; filename="samsung-results.xlsx"'})
+    finally:analysis_slots.release()
+
+app.include_router(analyze_router)
