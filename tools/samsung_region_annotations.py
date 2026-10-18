@@ -1,4 +1,4 @@
-"""Local polygon extension of samsung_visual_dataset; no approval labels or inference."""
+"""Private polygon editor. Optional official context is never inference input."""
 import argparse
 import hashlib
 import json
@@ -21,6 +21,10 @@ def validate(data):
         if len(digest)!=64 or any(c not in '0123456789abcdef' for c in digest) or digest in seen:raise ValueError('INVALID_OR_DUPLICATE_DIGEST')
         seen.add(digest)
         if item.get('role') not in {None,'device','scan'}:raise ValueError('INVALID_ROLE')
+        context=item.get('official')
+        if context is not None:
+            if context.get('category') not in {'APPROVED','REJECTED'} or context.get('category_source')!='Final_Status':raise ValueError('INVALID_OFFICIAL_CATEGORY')
+            if context.get('role')!=item.get('role') or not context.get('case_id') or not context.get('reason'):raise ValueError('INVALID_OFFICIAL_CONTEXT')
         if not item.get('case_group'):raise ValueError('CASE_GROUP_REQUIRED')
         if set(item['reviews'])!=set(CLASSES) or any(s not in STATES for s in item['reviews'].values()):raise ValueError('INVALID_REVIEW')
         for obj in item['objects']:
@@ -64,7 +68,8 @@ def editor(manifest,output):
     target=Path(output)
     if target.resolve()==Path(manifest).resolve() or target.exists():raise ValueError('OUTPUT_EXISTS_KEEP_PRIOR_VERSIONS')
     target.parent.mkdir(parents=True,exist_ok=True)
-    target.write_text(template.replace('/*LOCAL_MANIFEST*/{}',json.dumps(data,ensure_ascii=False).replace('<','\\u003c')),encoding='utf-8')
+    serialized=json.dumps(data,ensure_ascii=False).replace('<',chr(92)+'u003c')
+    target.write_text(template.replace('/*LOCAL_MANIFEST*/{}',serialized),encoding='utf-8')
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['init','editor','validate']);p.add_argument('manifest',type=Path);p.add_argument('output',type=Path,nargs='?');a=p.parse_args()
