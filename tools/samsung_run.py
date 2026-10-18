@@ -18,7 +18,7 @@ from backend.gate.samsung_paths import input_archives
 def fingerprint():
     root=Path(__file__).resolve().parents[1]
     files=['backend/gate/samsung_auto.py','backend/gate/samsung_vision.py','backend/gate/samsung_barcodes.py','backend/gate/local_ocr.py','backend/gate/private_temp.py','tools/windows_ocr.ps1','backend/gate/samsung_pretrained.py','backend/gate/pretrained_ocr.py','backend/gate/samsung_preprocessing.py','backend/gate/samsung_policy.py','backend/gate/samsung_screen.py','tools/windows_ui_ocr.ps1']
-    profile=json.dumps([os.getenv('SAMSUNG_OCR_ENGINE','legacy'),os.getenv('SAMSUNG_OCR_DETECTOR','mobile'),os.getenv('SAMSUNG_RECOGNITION_PROFILE','original'),os.getenv('SAMSUNG_POLICY_PROFILE','role-v1')])
+    profile=json.dumps([os.getenv('SAMSUNG_OCR_ENGINE','legacy'),os.getenv('SAMSUNG_OCR_DETECTOR','mobile'),os.getenv('SAMSUNG_RECOGNITION_PROFILE','original'),os.getenv('SAMSUNG_POLICY_PROFILE','role-v1'),os.getenv('SAMSUNG_OCR_MEMORY_PROFILE','default')])
     return hashlib.sha256(profile.encode()+b''.join((root/f).read_bytes() for f in files)).hexdigest()[:16]
 
 

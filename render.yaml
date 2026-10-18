@@ -9,7 +9,17 @@ services:
     healthCheckPath: /api/v1/health
     envVars:
       - key: SAMSUNG_ENABLED
-        value: "false"
+        value: "true"
+      - key: SAMSUNG_OCR_ENGINE
+        value: ppocrv5
+      - key: SAMSUNG_OCR_MEMORY_PROFILE
+        value: bounded
+      - key: SAMSUNG_OCR_DETECTOR
+        value: mobile
+      - key: SAMSUNG_RECOGNITION_PROFILE
+        value: enhanced
+      - key: SAMSUNG_POLICY_PROFILE
+        value: role-v1
       - key: STORE_ANALYSIS_IMAGES
         value: "false"
       - key: HISTORY_DB

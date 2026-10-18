@@ -187,6 +187,9 @@ def analyze_photo(image, data, role, use_ocr=True, cache_dir=None, diagnostic_di
                                     quality='uncalibrated_ocr',confidence=None,
                                     coordinate_space='variant',perspective_matrix=info.get('perspective_matrix')))
                 records[-1]['original_to_variant']=info.get('original_to_variant')
+    # Variant pixels are no longer consumed once their OCR observations have
+    # been parsed. Do not retain them during the independent ONNX pass.
+    ocr_images.clear()
     pretrained=dict(status='NOT_SELECTED')
     if use_ocr and os.getenv('SAMSUNG_OCR_ENGINE','legacy')=='ppocrv5':
         try:

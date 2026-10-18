@@ -1,0 +1,12 @@
+VisionGate uses public PaddleOCR PP-OCRv5 mobile detection and Latin recognition
+models from PaddlePaddle, licensed under Apache-2.0. The license is distributed
+alongside this notice. These are upstream public weights, not weights trained
+on Samsung examples. No corporate photographs or annotations are included.
+
+Sources:
+https://github.com/PaddlePaddle/PaddleOCR
+https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx
+https://huggingface.co/PaddlePaddle/latin_PP-OCRv5_mobile_rec_onnx
+
+Exact revisions, sizes and SHA-256 hashes are in config/samsung-models.json.
+Inference uses installed local weights and has no network model fallback.

@@ -38,13 +38,19 @@ def text_crop(image,polygon):
 
 
 class PaddleONNX:
-    def __init__(self,model_root=None,threads=4,long_side=1600,recognizer='latin',detector='mobile'):
+    def __init__(self,model_root=None,threads=4,long_side=1600,recognizer='latin',detector='mobile',memory_profile='default'):
         import onnxruntime as ort
         import yaml
         root=Path(model_root) if model_root else Path(__file__).resolve().parents[2]/'data/Samsung/models'
         self.sessions=[];self.configs=[];self.long_side=long_side
         self.model_hashes={}
-        options=ort.SessionOptions();options.intra_op_num_threads=threads;options.inter_op_num_threads=1
+        if memory_profile not in {'default','bounded'}:raise ValueError('UNKNOWN_OCR_MEMORY_PROFILE')
+        options=ort.SessionOptions();options.intra_op_num_threads=1 if memory_profile=='bounded' else threads;options.inter_op_num_threads=1
+        if memory_profile=='bounded':
+            # Reuse no unbounded CPU arena across dynamic text sizes. This changes
+            # allocation/threading only, not pixels, weights, operators or thresholds.
+            options.enable_cpu_mem_arena=False
+            options.enable_mem_pattern=False
         options.log_severity_level=3
         if recognizer=='server' or detector=='server':options.graph_optimization_level=ort.GraphOptimizationLevel.ORT_ENABLE_BASIC
         if recognizer not in {'latin','server'}:raise ValueError('UNKNOWN_RECOGNIZER')

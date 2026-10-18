@@ -46,4 +46,5 @@ def test_profile_cache_separation(monkeypatch):
     monkeypatch.setenv('SAMSUNG_OCR_ENGINE','legacy');a=fingerprint()
     monkeypatch.setenv('SAMSUNG_OCR_ENGINE','ppocrv5');b=fingerprint()
     monkeypatch.setenv('SAMSUNG_OCR_DETECTOR','server');c=fingerprint()
-    assert len({a,b,c})==3
+    monkeypatch.setenv('SAMSUNG_OCR_MEMORY_PROFILE','bounded');d=fingerprint()
+    assert len({a,b,c,d})==4

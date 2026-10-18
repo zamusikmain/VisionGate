@@ -5,16 +5,29 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
+FROM python:3.13-slim AS samsung-models
+WORKDIR /models
+COPY tools/samsung_model_setup.py tools/samsung_model_setup.py
+COPY config/samsung-models.json config/samsung-models.json
+# Public upstream weights only, pinned by revision, size and SHA-256.
+# No local data/ directory is ever sent in the Docker build context.
+RUN python tools/samsung_model_setup.py --models mobile-det latin-rec --download
+RUN python -c "import urllib.request; urllib.request.urlretrieve('https://www.apache.org/licenses/LICENSE-2.0.txt', '/models/LICENSE-PaddleOCR.txt')"
+
 FROM python:3.13-slim AS runtime
 WORKDIR /app
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements-samsung-export.txt requirements-samsung-models.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-samsung-export.txt -r requirements-samsung-models.txt
 COPY backend/ backend/
 COPY config/ config/
+COPY --from=samsung-models /models/data/Samsung/models/ data/Samsung/models/
+COPY --from=samsung-models /models/LICENSE-PaddleOCR.txt licenses/PaddleOCR-APACHE-2.0.txt
+COPY deploy/SAMSUNG-MODELS-NOTICE.txt licenses/SAMSUNG-MODELS-NOTICE.txt
+COPY tools/__init__.py tools/samsung_export.py tools/
 COPY deploy/start.sh /app/start.sh
 COPY --from=frontend-build /build/dist /app/frontend/dist
 RUN useradd --create-home gate && mkdir -p /app/data && chown gate:gate /app/data && chmod 700 /app/data && chmod 755 /app/start.sh
-ENV PORT=10000 HISTORY_DB=/app/data/history.sqlite3 GATE_CONFIG=/app/data/thresholds.json STORE_ANALYSIS_IMAGES=false PRIVATE_IMAGE_DIR=/app/data/private-images MAX_CONCURRENT_ANALYSES=1 PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 SAMSUNG_ENABLED=false
+ENV PORT=10000 HISTORY_DB=/app/data/history.sqlite3 GATE_CONFIG=/app/data/thresholds.json STORE_ANALYSIS_IMAGES=false PRIVATE_IMAGE_DIR=/app/data/private-images MAX_CONCURRENT_ANALYSES=1 PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 SAMSUNG_ENABLED=true SAMSUNG_OCR_ENGINE=ppocrv5 SAMSUNG_OCR_DETECTOR=mobile SAMSUNG_RECOGNITION_PROFILE=enhanced SAMSUNG_POLICY_PROFILE=role-v1 SAMSUNG_OCR_MEMORY_PROFILE=bounded
 USER gate
 EXPOSE 10000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('PORT','10000')+'/api/v1/health',timeout=4)"

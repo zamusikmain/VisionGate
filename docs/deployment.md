@@ -1,5 +1,49 @@
 # GitHub publication and Render deployment
 
+## Existing Samsung service update (18 October 2026)
+
+Existing repository: https://github.com/zamusikmain/VisionGate (private).
+Existing service: https://visiongate-eg9j.onrender.com, Render ID
+`srv-db391snlot8c73f15ao0`, Frankfurt Free, branch `main`, automatic deploy on push.
+Do not create a replacement repository or service. Review and confirm the tested
+release immediately before pushing to `main`; never force-push.
+
+The updated Docker image installs XLSX and ONNX dependencies, obtains only the
+two public mobile PP-OCRv5 weights at pinned revisions/SHA-256 and includes their
+Apache-2.0 license/notice. Original images, documents, annotations, generated
+editors, private reports and experiment-trained weights never enter its context.
+The annotation tools from `6f4b2e0` remain local tools and are not public routes.
+
+Samsung is enabled for this explicitly requested public evaluation deployment.
+The default environment is `SAMSUNG_ENABLED=true`, `SAMSUNG_OCR_ENGINE=ppocrv5`,
+`SAMSUNG_OCR_DETECTOR=mobile`, `SAMSUNG_RECOGNITION_PROFILE=enhanced`,
+`SAMSUNG_POLICY_PROFILE=role-v1`, `SAMSUNG_OCR_MEMORY_PROFILE=bounded`.
+Existing dashboard values override these defaults; check them before deployment.
+`STORE_ANALYSIS_IMAGES=false` and one analysis slot remain in force.
+
+The bounded allocation profile disables ONNX CPU arena/pattern retention and uses
+one inference thread. It does not change pixels, resolution, weights or decision
+thresholds. Temporary legacy OCR arrays are released before ONNX inference.
+The Windows gallery-UI OCR rule is unavailable on Linux; missing evidence remains
+UNKNOWN, never a proven defect. This deployment does not solve box-face detection
+or critical-information coverage and is not a validated Samsung classifier.
+
+The existing Free plan provides 512 MB and 0.1 CPU. Do not upgrade or buy services
+without authorization. Resource/latency checks use synthetic images only; they do
+not establish support for every camera resolution. Corporate input belongs in the
+local application, not this public demonstration.
+
+Synthetic HTTP verification after deployment:
+
+```powershell
+python -m tools.samsung_hosting_smoke --base https://visiongate-eg9j.onrender.com --output reports/samsung-production/live-smoke
+```
+
+The command compares served assets with the local build, exercises pair/identity
+comparison, ZIP preview, XLSX integrity, corrupt uploads and blocked private paths.
+Separately verify the browser ZIP workflow, RU/EN and downloaded XLSX. Do not count
+deployment or successful software tests as evidence of photo-classification accuracy.
+
 ## Publication contract
 
 Use a PRIVATE GitHub repository named VisionGate and branch main. No customer photographs belong in Git, including private repositories. Dataset and holdout retain only good/bad/.gitkeep. Raster photographs are ignored globally; demo photos must be generated locally. Runtime images/uploads, reports/debug exports, SQLite files, secrets/environment files, logs, caches, dependency folders, build output, archives and IDE/system files are excluded. .env.example intentionally has an empty ADMIN_TOKEN.

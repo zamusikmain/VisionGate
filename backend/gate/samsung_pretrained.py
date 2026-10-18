@@ -36,18 +36,19 @@ def extract_records(result):
 
 
 @lru_cache(maxsize=2)
-def _engine(detector):
+def _engine(detector,memory_profile='default'):
     from .pretrained_ocr import PaddleONNX
-    return PaddleONNX(detector=detector)
+    return PaddleONNX(detector=detector,memory_profile=memory_profile)
 
 
 def _read_one(image,cache_dir=None,variant='ppocr-full',processing='identity'):
     detector=os.getenv('SAMSUNG_OCR_DETECTOR','mobile')
+    memory_profile=os.getenv('SAMSUNG_OCR_MEMORY_PROFILE','default')
     with _lock:
-        engine=_engine(detector)
+        engine=_engine(detector,memory_profile)
         # Cache identity includes implementation, complete pixels and model hashes.
         implementation=hashlib.sha256((Path(__file__).with_name('pretrained_ocr.py')).read_bytes()).hexdigest()
-        signature=json.dumps([VERSION,implementation,engine.model_hashes,engine.long_side,variant,processing],sort_keys=True)
+        signature=json.dumps([VERSION,implementation,engine.model_hashes,engine.long_side,variant,processing,memory_profile],sort_keys=True)
         key=hashlib.sha256(signature.encode()+str(image.shape).encode()+image.tobytes()).hexdigest()
         target=Path(cache_dir)/(key+'.json') if cache_dir else None
         if target and target.exists():
