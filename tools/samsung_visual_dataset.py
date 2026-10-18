@@ -75,6 +75,9 @@ def export_yolo(manifest,output,classes=CLASSES,seed=20261017):
 
 
 def editor(manifest,output):
+    if json.loads(Path(manifest).read_text(encoding='utf-8')).get('schema_version')==2:
+        from tools.samsung_region_annotations import editor as region_editor
+        return region_editor(manifest,output)
     data=validate(json.loads(Path(manifest).read_text(encoding='utf-8')))
     for p in data['images']:
         raw=Path(p['image']).read_bytes()
